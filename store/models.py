@@ -4,7 +4,11 @@ from unicodedata import category
 from django.db import models
 from category.models import Category
 from django.urls import reverse
+from django.contrib import admin
 # Create your models here.
+
+
+
 class Product(models.Model):
     product_name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(max_length=200, unique=True)
@@ -18,8 +22,35 @@ class Product(models.Model):
     modified_date = models.DateTimeField(auto_now_add=True)
 
     def get_url(self):
-        print("w")
         return reverse('single_product', args=[self.category.slug, self.slug])
 
     def __str__(self):
-        return self.product_name
+        return str(self.product_name)
+
+class VariationManager(models.Manager):
+    """Custom Manager"""
+
+    def colors(self):
+        return super(VariationManager, self).filter(variation_category="color", is_active=True)
+
+    def sizes(self):
+        return super(VariationManager, self).filter(variation_category="size", is_active=True)
+
+
+
+
+variation_category_choices = (
+    ('color', 'color'),
+    ('size', 'size'),
+)
+class Variation(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variation_category = models.CharField(max_length=100, choices=variation_category_choices)
+    variation_value = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    
+    objects = VariationManager()
+
+    def __str__(self):
+        return self.variation_value
